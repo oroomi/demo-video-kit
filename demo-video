@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One entry point.  ./demo-video up | down | status | question | live | shot | assemble | all
+# One entry point.  ./demo-video up | down | status | doctor | all | live | shot | assemble | frames | question
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 export PYTHONPATH="$ROOT${PYTHONPATH:+:$PYTHONPATH}"
@@ -11,6 +11,7 @@ case "$cmd" in
   assemble) exec python3 "$ROOT/dvkit/assemble.py" "$@" ;;
   doctor)   exec python3 "$ROOT/dvkit/doctor.py" ;;
   frames)   exec python3 "$ROOT/dvkit/frames.py" "$@" ;;
+  all)      exec python3 "$ROOT/dvkit/make.py" "$@" ;;
   question) exec python3 -m dvkit.question "$@" ;;
   *) sed -n '2,3p' "$0"; echo "see README.md"; exit 2 ;;
 esac
