@@ -1,4 +1,4 @@
-"""Paced browser actions (ported from /root/hack/video_palette/rec.py): time-pinned scrolling with smoothstep easing,
+"""Paced browser actions (ported from our earlier Playwright recorder): time-pinned scrolling with smoothstep easing,
 a visible cursor ring that glides to a target and clicks, typed input at a human pace."""
 import time
 

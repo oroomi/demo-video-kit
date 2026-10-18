@@ -16,7 +16,7 @@ sync: a magenta flash + 1 kHz beep (the "slate") at the start and end of every t
 ## One command
 
 ```bash
-cd /root/hack/kits/demo-video
+cd demo-video
 ./demo-video all --question "Tell me about Since Labs" --proof "P1:Every claim links back to a public record"
 # -> out/jx/demo.mp4  out/jx/demo_vertical.mp4  out/jx/demo.srt  out/jx/demo.proof.json  out/jx/demo_frames/sheet.png
 ```

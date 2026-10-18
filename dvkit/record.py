@@ -3,6 +3,7 @@
   record.py live  --question "Tell me about Since Labs" --take live1 [--mode stub|type|real] [--mock] [--hero 2.0]
   record.py shot  --module shots/jx_proof.py --names P1,P2
 Output goes to out/<profile>/ : <take>.mkv (picture + sound), <take>.marks.json, <take>.live.json (live takes), question.wav."""
+from pathlib import Path
 import argparse, importlib.util, json, pathlib, sys, time
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -89,7 +90,7 @@ def main():
     lv.add_argument("--hold", type=float, default=3.0, help="seconds to hold after the reply ends")
     lv.add_argument("--lead", type=float, default=0.9, help="silence before the question words (s)")
     lv.add_argument("--mock", action="store_true", help="rehearse with fixtures: no live model or TTS calls")
-    lv.add_argument("--mock-mp3", default="/root/hack/video_palette/seg2.mp3")
+    lv.add_argument("--mock-mp3", default=str(Path(__file__).resolve().parent.parent / "fixtures" / "mock_answer.mp3"))
     lv.add_argument("--mock-answer", default="Since Labs is a Finnish early-stage company in the radar. This is a rehearsal fixture, not a live answer.")
     lv.set_defaults(fn=cmd_live)
     sh = sub.add_parser("shot", parents=[common])
