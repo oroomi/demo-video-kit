@@ -231,7 +231,7 @@ def render_take(seg, fmt, W_DIR, idx, clock):
             dr.append(f"drawtext=fontfile={NEWS}:textfile={esc(tf)}:expansion=none:fontsize={hs}:fontcolor=white:borderw=4:bordercolor=black@0.55:x=(w-text_w)/2:y={ypos}:enable='between(t,0.0,{min(out_dur, 4.0):.3f})'")
     if seg.get("label"):
         tf = W_DIR / f"label{idx}_{fmt}.txt"; tf.write_text(seg["label"])
-        lx, ly = ("w-text_w-48", "44") if fmt == "h" else ("(w-text_w)/2", "120")
+        lx, ly = ("(w-text_w)/2", "h-120") if fmt == "h" else ("(w-text_w)/2", "120")
         dr.append(f"drawtext=fontfile={CAP_BOLD}:textfile={esc(tf)}:expansion=none:fontsize={30 if fmt == 'h' else 44}:fontcolor=white:box=1:boxcolor=black@0.55:boxborderw=14:x={lx}:y={ly}")
     chain += ("," if dr else "") + ",".join(dr) + ",format=yuv420p"
     cmd = ["ffmpeg", "-y", "-ss", f"{max(0, v_in):.3f}", "-t", f"{dur_src + 0.2:.3f}", "-i", seg["mkv"], "-frames:v", n]
