@@ -62,7 +62,7 @@ def main():
     asm += a.assemble_args.split()
     sh(*asm)
     sh(PY, "dvkit/frames.py", str(pathlib.Path(out) / f"{a.name}.mp4"))
-    print(f"\nDONE: {out}/{a.name}.mp4  (+ _vertical.mp4, .srt, .proof.json)  review sheet: {out}/{a.name}_frames/sheet.png")
+    print(f"\nDONE: {out}/{a.name}.mp4  (+ _vertical.mp4 unless --no-vertical, .srt, .proof.json)  review sheet: {out}/{a.name}_frames/sheet.png")
 
 
 if __name__ == "__main__":

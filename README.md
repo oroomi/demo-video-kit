@@ -112,6 +112,7 @@ If the site's voice UI works differently, change `dvkit/voice.py` (about 100 lin
 | Question captions fine but the orb does not move | Fake mic file must be WAV PCM 16-bit; keep `%noloop`; check `.marks.json` for `gum_open`. |
 | State goes to `error` immediately in voice mode | You are in `--mode real`: the real recogniser cannot work headless (see above). Use `stub` or `type`. |
 | Skew changes between takes (e.g. -0.17 s, -0.45 s, -1.6 s) | Normal: the sound input opens a variable time after the picture input. The slate measures it per take and assemble removes it; `drift_s` (start vs end of take) is what matters, typically under 100 ms. |
+| doctor FAILS on 'skew stable' or 'capture kept up' | The machine is busy (shared VPS). `all` retries it 3 times, 15 s apart. Check `uptime`; re-run when the load is under 2. assemble also refuses a take whose start/end slate drift exceeds 0.25 s (`--force-sync` to accept). |
 | `Permission denied` creating the PulseAudio socket | `DV_PA_DIR` is inside `/root`. Use `/run/...`. |
 
 Studio leftovers: `./demo-video down` stops Xvfb and PulseAudio by recorded PID only. A crashed take can leave a Chromium; find it by
