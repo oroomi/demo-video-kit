@@ -403,8 +403,11 @@ def build(a):
             if fmt == "h":
                 seg_starts[sp.get("name", str(i))] = (t, sp["v_in"], sp.get("speed", 1.0))
             if fmt == "h":
-                for c in sp["caps"]:
-                    srt.append((t + (c["t0"] - sp["v_in"]) / sp.get("speed", 1.0), t + (c["t1"] - sp["v_in"]) / sp.get("speed", 1.0), c["lines"]))
+                for c in sp["caps"]:   # clip to the segment: a caption block may run past the cut
+                    a0 = t + max(0.0, (c["t0"] - sp["v_in"]) / sp.get("speed", 1.0))
+                    a1 = min(t + D, t + (c["t1"] - sp["v_in"]) / sp.get("speed", 1.0))
+                    if a1 > a0:
+                        srt.append((a0, a1, c["lines"]))
             t += D
         results[fmt] = {"parts_v": parts_v, "parts_a": parts_a, "total": t}
         (W_DIR / f"list_v_{fmt}.txt").write_text("".join(f"file '{p}'\n" for p in parts_v))
