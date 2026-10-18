@@ -147,7 +147,7 @@ class Session:
             try:
                 self.page.evaluate("window.__dv.slate()")
                 self.mark("slate_end_call")
-                time.sleep(0.6)
+                time.sleep(1.8)    # the encoder can lag the wall clock by ~1 s under load; 'q' drops what is still queued, so hold on past the flash
             except Exception:
                 pass
         self.drain()

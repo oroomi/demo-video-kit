@@ -69,10 +69,10 @@
       ac = new (window.AudioContext || window.webkitAudioContext)();
       const o = ac.createOscillator(), g = ac.createGain();
       o.frequency.value = 1000; g.gain.value = 0.6; o.connect(g); g.connect(ac.destination);
-      o.start(); o.stop(ac.currentTime + 0.18);
+      o.start(); o.stop(ac.currentTime + 0.3);
     } catch (e) { /* no audio context: the flash alone still works for picture marks */ }
     dv.mark("slate", null);
-    setTimeout(() => { f.remove(); try { ac && ac.close(); } catch (e) { /* ignore */ } }, 200);
+    setTimeout(() => { f.remove(); }, 200); setTimeout(() => { try { ac && ac.close(); } catch (e) { /* ignore */ } }, 600);
   };
 
   /* ---- speech-recognition stand-in ----

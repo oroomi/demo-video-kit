@@ -10,6 +10,7 @@ case "$cmd" in
   shot)     exec python3 "$ROOT/dvkit/record.py" shot "$@" ;;
   assemble) exec python3 "$ROOT/dvkit/assemble.py" "$@" ;;
   doctor)   exec python3 "$ROOT/dvkit/doctor.py" ;;
+  frames)   exec python3 "$ROOT/dvkit/frames.py" "$@" ;;
   question) exec python3 -m dvkit.question "$@" ;;
   *) sed -n '2,3p' "$0"; echo "see README.md"; exit 2 ;;
 esac

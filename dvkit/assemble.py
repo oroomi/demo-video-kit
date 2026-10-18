@@ -30,13 +30,16 @@ PLEX = str(FONTS / "ibm-plex-sans-latin-400-normal.ttf")
 PLEX5 = str(FONTS / "ibm-plex-sans-latin-500-normal.ttf")
 
 FMT = {   # per output format: canvas, caption font size, caption width, band geometry, hook font size
-    "h": {"W": 1920, "H": 1080, "cap": 34, "maxw": 1640, "band": 148, "lines": 2, "hook": 76},
+    "h": {"W": 1920, "H": 1080, "cap": 38, "maxw": 1700, "band": 156, "lines": 2, "hook": 76},
     "v": {"W": 1080, "H": 1920, "cap": 52, "maxw": 940, "band": 420, "lines": 5, "hook": 92},
 }
 
 
 def run(cmd, **kw):
-    r = subprocess.run([str(c) for c in cmd], capture_output=True, text=True, **kw)
+    cmd = [str(c) for c in cmd]
+    if cmd[0] == "ffmpeg":
+        cmd[1:1] = ["-hide_banner", "-loglevel", "error"]
+    r = subprocess.run(cmd, capture_output=True, text=True, **kw)
     if r.returncode:
         print(" ".join(str(c) for c in cmd)[:700]); print(r.stderr[-2500:]); sys.exit(1)
     return r
@@ -193,9 +196,9 @@ def render_take(seg, fmt, W_DIR, idx, clock):
     if fmt == "h":
         chain = ",".join(pre + ["scale=1920:1080:flags=lanczos"])
     elif vm == "crop":
-        cw = 608
+        cw = 640   # a 640 px wide strip (the voice stage is 640 wide) scaled to the canvas width, padded top and bottom with the page colour
         x0 = int(max(0, min(1920 - cw, seg.get("focus", 0.5) * 1920 - cw / 2)))
-        chain = ",".join(pre + [f"crop={cw}:1080:{x0}:0", "scale=1080:1920:flags=lanczos"])
+        chain = ",".join(pre + [f"crop={cw}:1080:{x0}:0", "scale=1080:1822:flags=lanczos", "pad=1080:1920:0:49:color=0x021B44"])
     else:   # stack: blurred fill behind, the whole frame in the middle
         chain = (",".join(pre) + ",split[a][b];[a]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,boxblur=28:6,eq=brightness=-0.28[bg];"
                  "[b]scale=1080:-2:flags=lanczos[fg];[bg][fg]overlay=0:(H-h)/2-250")
@@ -280,7 +283,7 @@ def load_take(out, name, allow_mock=False):
 
 def build(a):
     prof = json.loads(pathlib.Path(a.profile).read_text())
-    out = pathlib.Path(a.out or ROOT / "out" / prof["name"])
+    out = pathlib.Path(a.out or ROOT / "out" / prof["name"]).resolve()
     W_DIR = out / "work"; W_DIR.mkdir(exist_ok=True)
     mkv, marks, live, sa = load_take(out, a.take, a.allow_mock)
     clock = Clock(marks, sa)
@@ -332,7 +335,6 @@ def build(a):
     v_end = to_v(r_off) + a.tail
     if gap > a.think_cap + 0.8:
         keep = 0.9
-        f_gap = (gap - keep) / (a.think_cap - keep)
         g0, g1 = v_think + keep, v_speak - 0.1
         f_gap = (g1 - g0) / max(0.5, (a.think_cap - keep - 0.1))
         segs.append(("take", dict(lv, v_in=v_start, dur_src=g0 - v_start, vmode="crop", name="live_a"), "live"))

@@ -50,13 +50,12 @@ def analyze(mkv):
     skew > 0: the sound sits later than the picture; < 0: earlier.  drift = skew_end - skew_start (should be about 0)."""
     D = duration(mkv)
     fl = _flashes(mkv)
-    beeps = [a for a, b in sound_bursts(mkv) if 0.1 <= b - a <= 0.3]   # the slate beep is 0.18 s long; the voice and tones are longer
-    def beep_for(f):
-        c = [o for o in beeps if f - 1.5 <= o <= f + 1.0]
-        return min(c, key=lambda o: abs(o - f)) if c else None
+    allb = [x for x in sound_bursts(mkv) if x[1] - x[0] >= 0.06]    # ignore clicks at the very edges of the capture
+    # nothing is audible before the start slate or after the end slate, so they are the first and the last bursts on the tape
+    b0 = allb[0][0] if allb and 0.08 <= allb[0][1] - allb[0][0] <= 0.8 else None
+    b1 = allb[-1][0] if len(allb) > 1 and 0.08 <= allb[-1][1] - allb[-1][0] <= 0.8 else None
     f0 = fl[0] if fl else None
     f1 = fl[-1] if len(fl) > 1 else None
-    b0, b1 = (beep_for(f0) if f0 is not None else None), (beep_for(f1) if f1 is not None else None)
     r = lambda x: None if x is None else round(x, 3)
     sk0 = None if f0 is None or b0 is None else round(b0 - f0, 3)
     sk1 = None if f1 is None or b1 is None else round(b1 - f1, 3)
