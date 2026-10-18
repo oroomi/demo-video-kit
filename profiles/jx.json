@@ -1,0 +1,18 @@
+{
+  "name": "jx",
+  "title": "Ocean Opportunity Radar (JunctionX Turku 2026), jx.hankintaviikko.fi",
+  "url": "https://jx.hankintaviikko.fi/?demo=1",
+  "theme": "dark",
+  "cursor": "#00E5D4",
+  "voice": {
+    "mic_button": "#ask-mic",
+    "overlay": "#ask-voice",
+    "state_attr": "data-state",
+    "transcript": "#ask-voice-line",
+    "answer": "#ask-voice-say",
+    "type_instead": "#ask-voice-typebtn",
+    "type_input": "#ask-voice-input",
+    "states": {"listening": "listening", "thinking": "thinking", "speaking": "speaking", "done": "done", "error": "error"}
+  },
+  "card": {"bg": "#021B44", "fg": "#F6FDFF", "accent": "#00E5D4", "soft": "#CDEBFF"}
+}

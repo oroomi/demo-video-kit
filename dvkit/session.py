@@ -132,7 +132,14 @@ class Session:
             self.mark("slate")
             time.sleep(0.5)
 
-    def stop_recording(self):
+    def stop_recording(self, end_slate=True):
+        if self.ff and self.ff.poll() is None and end_slate:
+            try:
+                self.page.evaluate("window.__dv.slate()")
+                self.mark("slate_end")
+                time.sleep(0.6)
+            except Exception:
+                pass
         self.drain()
         if self.ff and self.ff.poll() is None:
             try:

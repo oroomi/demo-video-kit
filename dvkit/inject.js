@@ -43,10 +43,26 @@
   };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", mk); else mk();
 
+
+  /* ---- watchers: log attribute / text changes of an element with page-clock timestamps ---- */
+  dv.watchAttr = (sel, attr, name) => {
+    const el = document.querySelector(sel); if (!el) return false;
+    dv.mark(name, el.getAttribute(attr));
+    new MutationObserver(() => dv.mark(name, el.getAttribute(attr))).observe(el, { attributes: true, attributeFilter: [attr] });
+    return true;
+  };
+  dv.watchText = (sel, name) => {
+    const el = document.querySelector(sel); if (!el) return false;
+    let last = "";
+    new MutationObserver(() => { const t = (el.innerText || "").trim(); if (t !== last) { last = t; dv.mark(name, t); } })
+      .observe(el, { childList: true, subtree: true, characterData: true });
+    return true;
+  };
+
   /* ---- sync slate: a white flash and a 1 kHz beep fired in the same task; assemble finds both and aligns picture and sound ---- */
   dv.slate = () => {
     const f = document.createElement("div");
-    f.style.cssText = "position:fixed;inset:0;background:#fff;z-index:2147483647;";
+    f.style.cssText = "position:fixed;inset:0;background:#ff00ff;z-index:2147483647;";
     document.documentElement.appendChild(f);
     let ac;
     try {
