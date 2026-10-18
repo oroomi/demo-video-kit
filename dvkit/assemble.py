@@ -229,6 +229,10 @@ def render_take(seg, fmt, W_DIR, idx, clock):
             tf = W_DIR / f"hook{idx}_{fmt}_{li}.txt"; tf.write_text(line)
             ypos = (70 if fmt == "h" else 150) + int(hs * 1.18) * li
             dr.append(f"drawtext=fontfile={NEWS}:textfile={esc(tf)}:expansion=none:fontsize={hs}:fontcolor=white:borderw=4:bordercolor=black@0.55:x=(w-text_w)/2:y={ypos}:enable='between(t,0.0,{min(out_dur, 4.0):.3f})'")
+    if seg.get("label"):
+        tf = W_DIR / f"label{idx}_{fmt}.txt"; tf.write_text(seg["label"])
+        lx, ly = ("w-text_w-48", "44") if fmt == "h" else ("(w-text_w)/2", "120")
+        dr.append(f"drawtext=fontfile={CAP_BOLD}:textfile={esc(tf)}:expansion=none:fontsize={30 if fmt == 'h' else 44}:fontcolor=white:box=1:boxcolor=black@0.55:boxborderw=14:x={lx}:y={ly}")
     chain += ("," if dr else "") + ",".join(dr) + ",format=yuv420p"
     cmd = ["ffmpeg", "-y", "-ss", f"{max(0, v_in):.3f}", "-t", f"{dur_src + 0.2:.3f}", "-i", seg["mkv"], "-frames:v", n]
     cmd += ["-filter_complex" if stack else "-vf", chain,
@@ -338,7 +342,7 @@ def build(a):
         g0, g1 = v_think + keep, v_speak - 0.1
         f_gap = (g1 - g0) / max(0.5, (a.think_cap - keep - 0.1))
         segs.append(("take", dict(lv, v_in=v_start, dur_src=g0 - v_start, vmode="crop", name="live_a"), "live"))
-        segs.append(("take", dict(lv, v_in=g0, dur_src=g1 - g0, speed=f_gap, silent=True, vmode="crop", name="live_gap"), "live"))
+        segs.append(("take", dict(lv, v_in=g0, dur_src=g1 - g0, speed=f_gap, silent=True, vmode="crop", name="live_gap", label=f"real wait {gap:.1f} s, shown at {f_gap:.1f}x"), "live"))
         segs.append(("take", dict(lv, v_in=g1, dur_src=v_end - g1, vmode="crop", name="live_b"), "live"))
         print(f"thinking gap {gap:.1f} s real: sped up x{f_gap:.1f} to {a.think_cap:.1f} s")
     else:
