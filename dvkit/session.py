@@ -16,7 +16,7 @@ HERE = pathlib.Path(__file__).parent
 
 class Session:
     def __init__(self, name, out_dir, size=None, fps=30, question_wav=None, sr_stub=True, cursor="#00E5D4",
-                 init_scripts=(), mock=None, keep_profile=False, extra_args=(), theme=None, locale="en-US"):
+                 init_scripts=(), init_css=None, mock=None, keep_profile=False, extra_args=(), theme=None, locale="en-US"):
         self.name = name
         self.out = pathlib.Path(out_dir)
         self.out.mkdir(parents=True, exist_ok=True)
@@ -27,6 +27,7 @@ class Session:
         self.sr_stub = sr_stub
         self.cursor = cursor
         self.init_scripts = list(init_scripts)
+        self.init_css = init_css
         self.mock = mock
         self.extra_args = list(extra_args)
         self.theme = theme
@@ -50,6 +51,10 @@ class Session:
         geo = subprocess.run(["xdotool", "getdisplaygeometry"], env=stack.env(), capture_output=True, text=True).stdout.split()
         if geo and f"{geo[0]}x{geo[1]}" != self.size:
             raise SystemExit(f"the X display is {geo[0]}x{geo[1]} but this take wants {self.size}: run `./demo-video down && DV_SIZE={self.size} ./demo-video up`")
+        try:
+            os.nice(6)      # the browser (and Playwright's driver) inherit this; ffmpeg is started at -10 so the capture clock always wins
+        except OSError:
+            pass
         self._profile = tempfile.mkdtemp(prefix="dvprof-", dir=str(self.out))
         args = [
             "--kiosk", "--window-position=0,0", f"--window-size={self.w + 1},{self.h + 1}",   # +1: kiosk comes out 1 px short
@@ -72,6 +77,10 @@ class Session:
         self.ctx.add_init_script((HERE / "inject.js").read_text())
         if self.theme:
             self.ctx.add_init_script(f"try{{localStorage.setItem('theme',{json.dumps(self.theme)})}}catch(e){{}}")
+        if self.init_css:   # recording-only CSS (e.g. drop backdrop-filter: software rendering cannot animate it); never touches the site's files
+            self.ctx.add_init_script("(() => { const css = " + json.dumps(self.init_css) + "; const add = () => { const s = document.createElement('style'); s.id = '__dvcss'; "
+                                     "s.textContent = css; (document.head || document.documentElement).appendChild(s); }; "
+                                     "if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', add); else add(); })();")
         for s in self.init_scripts:
             self.ctx.add_init_script(s)
         if self.mock:
@@ -113,13 +122,14 @@ class Session:
     # ------------------------------------------------------------------ recording
     def start_recording(self, slate=True, lead_s=0.6):
         """Start ffmpeg, wait until it is really producing frames, then fire the slate (flash + beep)."""
-        cmd = ["ffmpeg", "-y", "-hide_banner", "-loglevel", "warning",
-               "-thread_queue_size", "2048", "-use_wallclock_as_timestamps", "1", "-f", "x11grab", "-framerate", str(self.fps),
+        cmd = ["ffmpeg", "-y", "-hide_banner", "-loglevel", "warning", "-copyts", "-start_at_zero",   # keep the two inputs' real wall-clock offset
+               "-thread_queue_size", "64", "-use_wallclock_as_timestamps", "1", "-f", "x11grab", "-framerate", str(self.fps),
                "-video_size", self.size, "-draw_mouse", "0", "-i", stack.DISPLAY,
-               "-thread_queue_size", "2048", "-use_wallclock_as_timestamps", "1", "-f", "pulse", "-ac", "2", "-i", stack.SINK + ".monitor",
-               "-vf", f"fps={self.fps}", "-c:v", "libx264", "-preset", "ultrafast", "-crf", "18", "-pix_fmt", "yuv420p", "-g", str(self.fps * 2),
+               "-thread_queue_size", "512", "-use_wallclock_as_timestamps", "1", "-f", "pulse", "-ac", "2", "-i", stack.SINK + ".monitor",
+               "-vf", f"fps={self.fps}", "-c:v", "libx264", "-preset", "ultrafast", "-crf", "18", "-threads", "2", "-pix_fmt", "yuv420p", "-g", str(self.fps * 2),
                "-c:a", "pcm_s16le", "-ar", "48000", str(self.mkv)]
-        self.ff = subprocess.Popen(cmd, env=stack.env(), stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.ff = subprocess.Popen(cmd, env=stack.env(), stdin=subprocess.PIPE, stderr=subprocess.PIPE,
+                                   preexec_fn=lambda: os.nice(-16))
         self.t_rec = time.time()
         # wait for the first frames to land on disk
         for _ in range(100):
@@ -129,19 +139,20 @@ class Session:
         time.sleep(lead_s)
         if slate:
             self.page.evaluate("window.__dv.slate()")
-            self.mark("slate")
+            self.mark("slate_call")
             time.sleep(0.5)
 
     def stop_recording(self, end_slate=True):
         if self.ff and self.ff.poll() is None and end_slate:
             try:
                 self.page.evaluate("window.__dv.slate()")
-                self.mark("slate_end")
+                self.mark("slate_end_call")
                 time.sleep(0.6)
             except Exception:
                 pass
         self.drain()
         if self.ff and self.ff.poll() is None:
+            self.t_q = time.time()
             try:
                 self.ff.stdin.write(b"q"); self.ff.stdin.flush()
             except Exception:
@@ -154,7 +165,17 @@ class Session:
         if self.ff:
             err = (self.ff.stderr.read() or b"").decode("utf-8", "replace")[-1500:] if self.ff.stderr else ""
             self.ff = None
-            meta = {"name": self.name, "size": self.size, "fps": self.fps, "t_rec_start": self.t_rec,
+            lost = None
+            try:
+                d = float(subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", str(self.mkv)],
+                                         capture_output=True, text=True).stdout.strip())
+                lost = round((self.t_q - self.t_rec) - d, 2)
+            except Exception:
+                pass
+            if lost is not None and lost > 0.6:
+                print(f"WARNING: the capture lost {lost} s against the wall clock (CPU starved). Picture and sound may not line up; "
+                      f"re-record when the machine is quieter, or lower the load (DV_SIZE=1280x720).", file=sys.stderr)
+            meta = {"capture_lost_s": lost, "name": self.name, "size": self.size, "fps": self.fps, "t_rec_start": self.t_rec,
                     "question_wav": self.question_wav, "marks": sorted(self.marks + self.page_marks, key=lambda m: m["t"]),
                     "ffmpeg_stderr_tail": err}
             (self.out / f"{self.name}.marks.json").write_text(json.dumps(meta, indent=1))

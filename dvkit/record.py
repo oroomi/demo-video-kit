@@ -29,7 +29,8 @@ def cmd_live(a):
         print("MOCK: no live model or TTS calls; this take cannot be assembled without --allow-mock", file=sys.stderr)
     url = a.url or prof["url"]
     with Session(a.take, out, size=a.size, question_wav=qwav, sr_stub=(a.mode == "stub"), cursor=prof.get("cursor", "#00E5D4"),
-                 theme=prof.get("theme"), mock=mock) as s:
+                 theme=prof.get("theme"), mock=mock,
+                 init_css=None if a.faithful else prof.get("perf_css")) as s:
         s.goto(url)
         s.start_recording()
         s.mark("hero_start")
@@ -56,7 +57,8 @@ def cmd_shot(a):
     base = a.base or prof["url"].split("/?")[0].rstrip("/")
     for name in a.names.split(","):
         fn, path = mod.SHOTS[name]
-        with Session(name, out, size=a.size, sr_stub=False, cursor=prof.get("cursor", "#00E5D4"), theme=prof.get("theme")) as s:
+        with Session(name, out, size=a.size, sr_stub=False, cursor=prof.get("cursor", "#00E5D4"), theme=prof.get("theme"),
+                     init_css=None if a.faithful else prof.get("perf_css")) as s:
             s.goto(base + path)
             s.start_recording()
             tl = actions.TL()
@@ -76,6 +78,7 @@ def main():
     common.add_argument("--profile", default=str(ROOT / "profiles/jx.json"))
     common.add_argument("--out")
     common.add_argument("--size")
+    common.add_argument("--faithful", action="store_true", help="do not inject the recording-only perf CSS (profile perf_css); expect a slideshow on a CPU-only machine")
     lv = sub.add_parser("live", parents=[common])
     lv.add_argument("--question", required=True)
     lv.add_argument("--take", default="live1")

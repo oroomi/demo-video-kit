@@ -12,7 +12,26 @@
     "answer": "#ask-voice-say",
     "type_instead": "#ask-voice-typebtn",
     "type_input": "#ask-voice-input",
-    "states": {"listening": "listening", "thinking": "thinking", "speaking": "speaking", "done": "done", "error": "error"}
+    "states": {
+      "listening": "listening",
+      "thinking": "thinking",
+      "speaking": "speaking",
+      "done": "done",
+      "error": "error"
+    }
   },
-  "card": {"bg": "#021B44", "fg": "#F6FDFF", "accent": "#00E5D4", "soft": "#CDEBFF"}
+  "card": {
+    "bg": "#021B44",
+    "fg": "#F6FDFF",
+    "accent": "#00E5D4",
+    "soft": "#CDEBFF"
+  },
+  "headline": "Ocean Opportunity Radar",
+  "tagline": "Find blue-economy startups the week they appear  |  Team Old Hackers  |  JunctionX Turku 2026",
+  "transfer_line": "One config file holds the sector. Swap it: same radar, new domain.",
+  "end_url": "jx.hankintaviikko.fi",
+  "end_line": "Find them first. Know why. Know who comes next.",
+  "qr": "https://jx.hankintaviikko.fi/",
+  "perf_css": ".ask-voice{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}",
+  "perf_css_why": "Software rendering animates the 88%-opaque voice overlay's backdrop-filter at 7 fps; without it 58 fps. The overlay looks the same."
 }

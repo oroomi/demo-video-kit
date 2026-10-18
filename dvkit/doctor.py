@@ -30,8 +30,11 @@ def main():
         time.sleep(0.5)
         s.start_recording()
         s.page.evaluate("tone()")
-        time.sleep(3.2)
-        s.stop_recording()
+        for _ in range(4):               # extra pulses while the page animates: proves the capture clock holds under load
+            time.sleep(1.2)
+            s.page.evaluate("window.__dv.slate()")
+        time.sleep(0.6)
+        meta = s.stop_recording()
     mkv = out / "doctor.mkv"
     check("recording exists", mkv.exists() and mkv.stat().st_size > 50000, f"{mkv.stat().st_size // 1024} KiB" if mkv.exists() else "")
     r = subprocess.run(["ffprobe", "-v", "error", "-count_frames", "-select_streams", "v:0", "-show_entries", "stream=nb_read_frames,width,height", "-of", "json", str(mkv)], capture_output=True, text=True)
@@ -41,6 +44,7 @@ def main():
     mx = re.search(r"max_volume: (-?[0-9.]+) dB", v)
     check("browser sound reached the tape", mx and float(mx.group(1)) > -30, f"max {mx.group(1)} dB" if mx else "no audio")
     a = sync.analyze(mkv)
+    check("capture kept up with the wall clock (lost under 0.6 s)", meta["capture_lost_s"] is not None and meta["capture_lost_s"] < 0.6, f"lost {meta['capture_lost_s']} s")
     check("start slate found (flash + beep)", a["skew_start"] is not None, f"flash {a['flash_start']} s, beep {a['beep_start']} s")
     check("end slate found (flash + beep)", a["skew_end"] is not None, f"flash {a['flash_end']} s, beep {a['beep_end']} s")
     check("skew stable across the take (drift under 60 ms)", a["drift"] is not None and abs(a["drift"]) < 0.06, f"start {a['skew_start']} s, end {a['skew_end']} s, drift {a['drift']} s")
