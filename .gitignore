@@ -1,0 +1,7 @@
+.venv-tts/
+assets/voices/*.onnx
+out/
+.run/
+__pycache__/
+*.pyc
+dvprof-*/
