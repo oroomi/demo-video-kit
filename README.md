@@ -131,3 +131,7 @@ dvkit/mock.py         rehearsal fixtures                                dvkit/fr
 profiles/jx.json      site profile (selectors, cards, perf CSS)         shots/jx_proof.py  scripted proof shots
 templates/SHOTLIST.md the 2-minute structure, timing rules, checklist
 ```
+
+## License
+
+MIT, see [LICENSE](LICENSE). Copyright (c) 2026 The Mishakin Group.
