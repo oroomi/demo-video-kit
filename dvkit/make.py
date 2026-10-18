@@ -2,7 +2,7 @@
 """One command: studio up -> self-test -> live voice take -> proof shots -> assemble -> review frames.
   ./demo-video all --question "Tell me about Since Labs" --proof "P1:Every claim links back to a public record" [--module shots/jx_proof.py]
 Use --mock to rehearse without spending live model or TTS calls (the result is then flagged and assembled with --allow-mock)."""
-import argparse, pathlib, subprocess, sys
+import argparse, pathlib, subprocess, sys, time
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 PY = sys.executable
@@ -36,7 +36,14 @@ def main():
     out = a.out or str(ROOT / "out" / prof["name"])
     sh(PY, "-m", "dvkit.stack", "up")
     if not a.skip_doctor:
-        sh(PY, "dvkit/doctor.py")
+        for attempt in (1, 2, 3):   # a shared machine can be starved for a moment; the gate must pass on a quiet moment, not once
+            r = subprocess.run([PY, "dvkit/doctor.py"], cwd=ROOT, env={**__import__("os").environ, "PYTHONPATH": str(ROOT)})
+            if r.returncode == 0:
+                break
+            if attempt == 3:
+                raise SystemExit("doctor failed 3 times: see README troubleshooting (load: " + open("/proc/loadavg").read().split()[0] + ")")
+            print(f"doctor attempt {attempt} failed (load {open('/proc/loadavg').read().split()[0]}); retrying in 15 s", file=sys.stderr)
+            time.sleep(15)
     live = [PY, "dvkit/record.py", "live", "--profile", a.profile, "--out", out, "--take", a.take, "--question", a.question,
             "--mode", a.mode, "--question-source", a.question_source]
     if a.mock:

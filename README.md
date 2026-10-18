@@ -53,7 +53,7 @@ speed, longer is sped up and labelled with the real wait), `--no-vertical`, `--m
 Structure of the video (details and the 2-minute version: `templates/SHOTLIST.md`): hook (assistant already speaking), title card,
 live moment (mic click, our question, the real reply), proof shots, transfer line + end card with URL and QR.
 
-## What works for the question audio (tested on this VPS, Chromium 1228 from Playwright 1.60)
+## What works for the question audio (tested on this VPS, Playwright 1.60 Chromium)
 
 1. **Fake microphone from a file: works.** `--use-fake-device-for-media-stream --use-fake-ui-for-media-stream --use-file-for-fake-audio-capture=q.wav%noloop`.
    `getUserMedia` resolves, the site's orb analyser moves with our question. The WAV has 0.9 s of lead silence so the mic opening

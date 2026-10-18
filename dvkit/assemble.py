@@ -21,6 +21,7 @@ from PIL import Image, ImageDraw, ImageFont
 from dvkit import sync
 
 FPS = 30
+FORCE = False
 CAP_FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
 CAP_BOLD = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 FONTS = ROOT / "assets/fonts"
@@ -282,6 +283,9 @@ def load_take(out, name, allow_mock=False):
     else:
         sa = sync.analyze(mkv)
         cache.write_text(json.dumps(sa, indent=1))
+    drift = sa.get("drift")
+    if drift is not None and abs(drift) > 0.25 and not FORCE:
+        raise SystemExit(f"take {name}: picture/sound drift {drift:+.2f} s between start and end slate (capture was starved). Re-record on a quieter machine, or --force-sync to accept.")
     return mkv, marks["marks"], live, sa
 
 
@@ -504,8 +508,11 @@ def main():
     ap.add_argument("--think-cap", type=float, default=3.0, help="longest thinking gap shown at real speed (s); longer ones are sped up to this")
     ap.add_argument("--no-vertical", action="store_true")
     ap.add_argument("--allow-mock", action="store_true")
+    ap.add_argument("--force-sync", action="store_true", help="accept a take whose start/end slate drift exceeds 0.25 s")
     ap.add_argument("--max-mb", type=float, default=50.0)
     a = ap.parse_args()
+    global FORCE
+    FORCE = a.force_sync
     build(a)
 
 
